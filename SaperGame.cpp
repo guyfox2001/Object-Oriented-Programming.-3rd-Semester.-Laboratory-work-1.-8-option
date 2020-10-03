@@ -9,6 +9,7 @@ SaperGame::SaperGame(int& size)
 		и зарандомит расположение мин.Если интересно 
 		и нужно спроси потом сам
 	*/
+	srand(time(NULL));
 	this->Size_Of_Map = size;
 	this->GameMap = new int* [this->Size_Of_Map + 2];
 	for (int i = 0; i < size + 2; i++) {
@@ -18,6 +19,7 @@ SaperGame::SaperGame(int& size)
 		}
 	}
 	int rand_i, rand_j;
+	this->FlagsIsRight = 0;
 	this->MinesNotDetected = (int)(size * size / 5);
 	for (int i = 0; i < this->MinesNotDetected; i++) { // здесь на поле добавятся 25 мин
 		do {
@@ -61,14 +63,33 @@ void SaperGame::print_map()
 	system("cls");
 	for (int i = 1; i < this->Size_Of_Map+1; i++) {
 		for (int j = 1; j < this->Size_Of_Map+1; j++) {
-			if (this->opened_cells.find(std::make_pair(i, j))!= this->opened_cells.end())
+			/*if (this->opened_cells.find(std::make_pair(i, j))!= this->opened_cells.end())
 				std::cout << this->GameMap[i][j] << ' ';
 			else {
 				if (this->GameMap[i][j] == 0 && this->opened_cells.find(std::make_pair(i, j)) != this->opened_cells.end())
 					std::cout << "N" << ' ';
 				else
 					std::cout << "X" << ' ';
-			}	
+			}	*/
+			if (this->GameMap[i][j] == 10) {
+				std::cout << 'F' << ' ';
+				continue;
+			}
+			if (this->opened_cells.find(std::make_pair(i, j)) == this->opened_cells.end()) {
+				std::cout << 'X' << ' ';
+			}
+			else {
+				if (this->GameMap[i][j] == 0) {
+					std::cout << 'N' << ' ';
+				}
+				if (this->GameMap[i][j] > 0 && this->GameMap[i][j] < 9) {
+					std::cout << this->GameMap[i][j] << ' ' ;
+				}
+				if (this->GameMap[i][j] == 9) {
+					std::cout << 'M' << ' ';
+
+				}
+			}
 		}
 		std::cout << '\n';
 	}
@@ -87,18 +108,63 @@ void SaperGame::print_cheat_map()
 
 void SaperGame::insert_flag(int& row, int& colum)
 {
-
+	if (this->GameMap[row][colum] == 10) {
+		std::cerr << "That cell has alredy been marked a flag\n";
+		Sleep(2000);
+		return;
+	}
+	if (this->opened_cells.find(std::make_pair(row, colum)) != this->opened_cells.end()) {
+		std::cerr << "That cell has alredy been opened\n";
+		Sleep(2000);
+		return;
+	}
+	switch (this->GameMap[row][colum])
+	{
+	case 0:
+		std::cerr << "That cell cell is not a mine\n";
+		this->Open_Null_Cells(row, colum);
+		break;
+	case 9:
+		this->MinesNotDetected--; this->FlagsIsRight++;
+		this->GameMap[row][colum] = 10;
+		break;
+	default:
+		std::cerr << "That cell cell is not a mine\n";
+		Sleep(2000);
+		this->opened_cells.insert(std::make_pair(row, colum));
+		if (this->MinesNotDetected == 0 || std::pow(this->Size_Of_Map, 2) - this->opened_cells.size() == this->MinesNotDetected + this->FlagsIsRight)
+			this->win = true;
+		break;
+	}
 }
 
 void SaperGame::open_cell(int& row, int& colum)
 {
-	if (this->GameMap[row][colum] == 0)this->Open_Null_Cells(row, colum);
-	if (this->GameMap[row][colum] == 9)this->loose = true;
-	if (this->GameMap[row][colum] > 0 && this->GameMap[row][colum] < 9) {
-		this->opened_cells.insert(std::make_pair(row, colum));
+	if (this->GameMap[row][colum] == 10) {
+		std::cerr << "That cell has alredy been marked a flag\n";
+		Sleep(2000);
+		return;
 	}
-	if (std::pow(this->Size_Of_Map, 2) - this->opened_cells.size() == this->MinesNotDetected) {
-		this->win = true;
+	if (this->opened_cells.find(std::make_pair(row, colum)) != this->opened_cells.end()) {
+		std::cerr << "That cell has alredy been opened\n";
+		Sleep(2000);
+
+		return;
+	}
+	switch (this->GameMap[row][colum])
+	{
+	case 0:
+		this->Open_Null_Cells(row, colum);
+		break;
+	case 9:
+		this->opened_cells.insert(std::make_pair(row, colum));
+		this->loose = true;
+		break;
+	default:
+		this->opened_cells.insert(std::make_pair(row, colum));
+		if (this->MinesNotDetected == 0 || std::pow(this->Size_Of_Map, 2) - this->opened_cells.size() == this->MinesNotDetected + this->FlagsIsRight)
+			this->win = true;
+		break;
 	}
 }
 
